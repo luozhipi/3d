@@ -131,17 +131,8 @@ BVH.Reader.prototype = {
     	this.bones = [];
 
     	var n = this.nodes.length, node, bone;
-<<<<<<< HEAD
         var geo = new THREE.SphereGeometry(this.boneSize,32,32);
     	geo.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, 0.5 ) );      
-=======
-    	//var geo = new THREE.CubeGeometry( 0.2, 0.2, 10 );//new THREE.Geometry();
-    	var geo = new THREE.CubeGeometry( this.boneSize, this.boneSize, 1);
-    	//var geo = new THREE.SphereGeometry(this.boneSize/2.0, 32, 32);
-    	//geo.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, 6 ) );
-    	geo.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, 0.5 ) );
-    	//var mat = new THREE.MeshNormalMaterial();
->>>>>>> origin/gh-pages
 
     	for(var i=0; i<n; i++){
     		node = this.nodes[i];
