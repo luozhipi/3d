@@ -253,14 +253,14 @@
 		}
 
 		function addBasicObject() {
-			var skyMaterial = new THREE.MeshBasicMaterial( { color: 0x303030, side: THREE.BackSide, depthWrite: false } );
+			var skyMaterial = new THREE.MeshBasicMaterial( { color: 0xA29B9B, side: THREE.BackSide, depthWrite: false } );
 		    sky = new THREE.Mesh( new THREE.BoxGeometry( FAR, FAR, FAR ), skyMaterial );
 			scene.add( sky );
 
 			var groundMaterial = new THREE.MeshBasicMaterial( { color: 0xFFFFFF, transparent: true } );
 			var blendings = [ "NoBlending", "NormalBlending", "AdditiveBlending", "SubtractiveBlending", "MultiplyBlending", "AdditiveAlphaBlending" ];
 			groundMaterial.blending = THREE[ blendings[ 4 ] ];
-			ground = new THREE.Mesh(new THREE.PlaneGeometry( 10000, 10000, 4, 4 ), groundMaterial);
+			ground = new THREE.Mesh(new THREE.PlaneGeometry( 10000, 10000, 40, 40 ), groundMaterial);
 			ground.position.set( 0, 0, 0 );
 			ground.rotation.x = - Math.PI / 2;
 			ground.receiveShadow = true;
