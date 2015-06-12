@@ -8,10 +8,16 @@
 	<meta content="utf-8" http-equiv="encoding">
 	<meta http-equiv="X-UA-Compatible" content="IE=11,chrome=1">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<<<<<<< HEAD
 	<meta property="og:type" content="website"/>
 	<meta name="language" content="en-us" />
+=======
+	<meta property="og:site_name" content="LOTH"/>
+	<meta property="og:type" content="website"/>
+	<meta property="og:description" content="Experiment full morphing in webGl"/>
+>>>>>>> origin/gh-pages
 	<link href="css/dianna.css" rel="stylesheet" type="text/css">
-	<link rel="stylesheet" type="text/css" href="history/history.css" />
+	<meta name="language" content="en-us" />
 
 </head>
 
@@ -22,7 +28,7 @@
 
 	<script src='js/dat.gui.min.js'></script>
 
-	<script>
+	<script> 
 		var vsize = { x:100, y:100, z:0 };
 		var mouse = { x:0, y:0 };
 		var lightPos, camPos;
@@ -251,14 +257,14 @@
 		}
 
 		function addBasicObject() {
-			var skyMaterial = new THREE.MeshBasicMaterial( { color: 0x303030, side: THREE.BackSide, depthWrite: false } );
+			var skyMaterial = new THREE.MeshBasicMaterial( { color: 0xA29B9B, side: THREE.BackSide, depthWrite: false } );
 		    sky = new THREE.Mesh( new THREE.BoxGeometry( FAR, FAR, FAR ), skyMaterial );
 			scene.add( sky );
 
 			var groundMaterial = new THREE.MeshBasicMaterial( { color: 0xFFFFFF, transparent: true } );
 			var blendings = [ "NoBlending", "NormalBlending", "AdditiveBlending", "SubtractiveBlending", "MultiplyBlending", "AdditiveAlphaBlending" ];
 			groundMaterial.blending = THREE[ blendings[ 4 ] ];
-			ground = new THREE.Mesh(new THREE.PlaneGeometry( 1000, 1000, 4, 4 ), groundMaterial);
+			ground = new THREE.Mesh(new THREE.PlaneGeometry( 10000, 10000, 40, 40 ), groundMaterial);
 			ground.position.set( 0, 0, 0 );
 			ground.rotation.x = - Math.PI / 2;
 			ground.receiveShadow = true;
@@ -512,9 +518,13 @@
 		<div id="viewport"></div>
 		<div id="hubs">
 			<div id="debug"></div>
+<<<<<<< HEAD
 			<div id="guiContener">
                 <div id="gui"></div>
             </div>
+=======
+			<div id="guiContener"><div id="gui"></div></div>
+>>>>>>> origin/gh-pages
 			<input type="file" id="files" />
 		</div>
 		<div id="BVHhubs">
