@@ -8,20 +8,14 @@
 	<meta content="utf-8" http-equiv="encoding">
 	<meta http-equiv="X-UA-Compatible" content="IE=11,chrome=1">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-	<meta property="og:image" content="http://lo-th.github.io/olympe/res/img/logo.png"/>
-	<meta property="og:title" content="Advanced Morphing"/>
-	<meta property="og:url" content="http://lo-th.github.io/olympe/"/>
-	<meta property="og:site_name" content="LOTH"/>
 	<meta property="og:type" content="website"/>
-	<meta property="og:description" content="Experiment full morphing in webGl"/>
 	<meta name="language" content="en-us" />
-	<link rel="shortcut icon" href="res/img/favicon.ico" type="image/x-icon" />
 	<link href="css/dianna.css" rel="stylesheet" type="text/css">
 	<link rel="stylesheet" type="text/css" href="history/history.css" />
 
 </head>
 
-	<script src="js/three.min.66.js"></script>
+	<script src="js/three.min.js"></script>
 	<script src="js/BufferGeometryUtils.66.js"></script>
 
 	<script src="js/Bvh.js"></script>
@@ -150,7 +144,6 @@
 		    centerLight =  new THREE.Vector3(0,-45,0);
 		    moveCamera();
 
-
 			addBasicObject();
 
 			initLightAndSky();
@@ -274,6 +267,15 @@
 			var helper2 = new THREE.GridHelper( 100, 50 );
 			helper2.setColors( 0x00ff00, 0x888888 );
 			scene.add( helper2 );
+            var offset = new THREE.Vector3(0,0,0);
+            var origin = new THREE.Vector3(0, 0, 0);
+            var x_arrow = new THREE.Vector3(1, 0, 0);
+            var y_arrow = new THREE.Vector3(0, 1, 0);
+            var z_arrow = new THREE.Vector3(0, 0, 1);
+            //scene.add( new THREE.ArrowHelper( x_arrow.add(offset), origin.add(offset), 30, 0xcc0000) );
+		    //scene.add( new THREE.ArrowHelper( y_arrow.add(offset), origin.add(offset), 30, 0x00cc00) );
+		    //scene.add( new THREE.ArrowHelper( z_arrow.add(offset), origin.add(offset), 30, 0x0000cc) );
+            
 		}
 
 		//-----------------------------------------------------
@@ -293,7 +295,7 @@
 			bvhReader = new BVH.Reader();
 			bvhReader.speed = BVHanimConfig.speed;
 
-			loadBVH("action.png");
+			loadBVH("/01/01_12.bvh");
 
 			initBVHGui();
 
@@ -510,10 +512,9 @@
 		<div id="viewport"></div>
 		<div id="hubs">
 			<div id="debug"></div>
-			<div id="guiContener"><div id="gui"></div></div>
-			<div id="copy">
-				BVH player <a href="http://3dflashlo.wordpress.com/" target="_blank">&nbsp;&nbsp;&nbsp;loth 2014&nbsp;&nbsp;&nbsp;</a>
-			</div>
+			<div id="guiContener">
+                <div id="gui"></div>
+            </div>
 			<input type="file" id="files" />
 		</div>
 		<div id="BVHhubs">

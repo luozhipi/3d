@@ -30,10 +30,12 @@ BVH.Reader = function(){
 
 	this.skeleton = null;
 	this.bones = [];
+    this.line_geos = [];
 	this.boneSize = 1.5;
 
-	this.material = new THREE.MeshNormalMaterial();//new THREE.MeshBasicMaterial({ color:0xffffff });
-}
+	this.material = new THREE.MeshBasicMaterial({ color: 0x0000cc });
+    this.line_material = new THREE.MeshNormalMaterial({ shading: THREE.SmoothShading });
+},
 
 BVH.Reader.prototype = {
     constructor: BVH.Reader,
@@ -129,26 +131,32 @@ BVH.Reader.prototype = {
     	this.bones = [];
 
     	var n = this.nodes.length, node, bone;
-    	//var geo = new THREE.CubeGeometry( 0.2, 0.2, 10 );//new THREE.Geometry();
-    	var geo = new THREE.CubeGeometry( this.boneSize, this.boneSize, 1);
-    	//geo.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, 6 ) );
-    	geo.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, 0.5 ) );
-    	//var mat = new THREE.MeshNormalMaterial();
+        var geo = new THREE.SphereGeometry(this.boneSize,32,32);
+    	geo.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, 0.5 ) );      
 
     	for(var i=0; i<n; i++){
     		node = this.nodes[i];
     		if ( node.name !== 'Site' ){
-    			bone = new THREE.Mesh(geo, this.material);
+                bone = new THREE.Mesh(geo, this.material);
     			bone.castShadow = true;
     			bone.rotation.order = 'XYZ';
 	    		bone.name = node.name;
 	    		this.skeleton.add(bone);
 	    		this.bones[i] = bone;
+                if(node.children.length)
+                {
+                    var target = new THREE.Vector3().setFromMatrixPosition( node.children[0].matrixWorld );
+                    var line_geometry = new THREE.CylinderGeometry( this.boneSize*.5, this.boneSize*.5, 1, 16 );
+                    var line_mesh = new THREE.Mesh( line_geometry, this.line_material ); 
+                    this.line_geos[i] = line_mesh;
+                    scene.add(line_mesh);
+                }
     	    }
     	}
     	scene.add( this.skeleton );
 
     },
+    
     updateSkeleton:function (  ) {
     	var mtx, node, bone;
     	var n = this.nodes.length;
@@ -156,23 +164,30 @@ BVH.Reader.prototype = {
     	for(var i=0; i<n; i++){
     		node = this.nodes[i];
     		bone = this.bones[i];
-
     		if ( node.name !== 'Site' ){
 	    		mtx = node.matrixWorld;
 	    		bone.position.setFromMatrixPosition( mtx );
-	    		//this.skeletonBones[i].rotation.setFromRotationMatrix( mtx );
-	    		if(node.children.length){
+	    		if(node.children.length)
+                {
 	    			target = new THREE.Vector3().setFromMatrixPosition( node.children[0].matrixWorld );
-	    			bone.lookAt(target);
-	    			bone.rotation.z = 0;
-
-	    			if(bone.name==="Head")bone.scale.set(this.boneSize*2,this.boneSize*2,BVH.DistanceTest(bone.position, target)*(this.boneSize*1.5));
-	    			else bone.scale.set(this.boneSize,this.boneSize,BVH.DistanceTest(bone.position, target));
+                    var direction = new THREE.Vector3().subVectors( bone.position, target );
+                    this.line_geos[i].scale.set(this.boneSize*.5, direction.length(), this.boneSize*.5);
+                    var mid_pos = new THREE.Vector3();
+                    mid_pos.x = (bone.position.x + target.x)/2;
+                    mid_pos.y = (bone.position.y + target.y)/2;
+                    mid_pos.z = (bone.position.z + target.z)/2;
+                    this.line_geos[i].position.set(mid_pos.x, mid_pos.y, mid_pos.z);
+                    var up = new THREE.Vector3(0, 1, 0);
+                    var crossVecs = new THREE.Vector3();
+                    crossVecs.crossVectors(up,direction);
+                    crossVecs.normalize();
+                    var dotVecs = Math.acos(direction.dot(up)/(direction.length()*up.length()));
+                    var q = new THREE.Quaternion();
+                    q.setFromAxisAngle(crossVecs, dotVecs);
+                    q.normalize();
+                    this.line_geos[i].useQuaternion = true;
+                    this.line_geos[i].quaternion.set(q.x, q.y, q.z, q.w);
 	    		}
-	    		/*if(node.parent){
-	    			target = new THREE.Vector3().setFromMatrixPosition( node.parent.matrixWorld );
-	    			this.skeletonBones[i].lookAt(target);
-	    		}*/
 	    	}
     	}
     },
