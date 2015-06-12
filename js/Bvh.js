@@ -167,8 +167,8 @@ BVH.Reader.prototype = {
 	    			bone.lookAt(target);
 	    			bone.rotation.z = 0;
 
-	    			if(bone.name==="Head")bone.scale.set(this.boneSize*2,this.boneSize*2,BVH.DistanceTest(bone.position, target)*(this.boneSize*1.5));
-	    			else bone.scale.set(this.boneSize,this.boneSize,BVH.DistanceTest(bone.position, target));
+	    			if(bone.name==="Head")bone.scale.set(this.boneSize,this.boneSize,BVH.DistanceTest(bone.position, target)*(this.boneSize*1.5));
+	    			else bone.scale.set(this.boneSize,this.boneSize,BVH.DistanceTest(bone.position, target)/2.0);
 	    		}
 	    		/*if(node.parent){
 	    			target = new THREE.Vector3().setFromMatrixPosition( node.parent.matrixWorld );
