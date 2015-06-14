@@ -29,6 +29,7 @@ BVH.Reader = function(){
 	this.tmpAngle = [];
 
 	this.skeleton = null;
+    this.joint = null;
 	this.bones = [];
     this.line_geos = [];
 	this.boneSize = 1.5;
@@ -128,11 +129,13 @@ BVH.Reader.prototype = {
 
     addSkeleton:function ( n ) {
     	this.skeleton = new THREE.Object3D();
+        this.joint = new THREE.Object3D();
     	this.bones = [];
+        this.line_geos = [];
 
     	var n = this.nodes.length, node, bone;
-        var geo = new THREE.SphereGeometry(this.boneSize,32,32);
-    	geo.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, 0.5 ) );      
+        var geo = new THREE.SphereGeometry(1.0,32,32);
+    	//geo.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, 0.5 ) );  
 
     	for(var i=0; i<n; i++){
     		node = this.nodes[i];
@@ -141,20 +144,29 @@ BVH.Reader.prototype = {
     			bone.castShadow = true;
     			bone.rotation.order = 'XYZ';
 	    		bone.name = node.name;
-	    		this.skeleton.add(bone);
+                this.joint.add(bone);
 	    		this.bones[i] = bone;
                 if(node.children.length)
                 {
                     var target = new THREE.Vector3().setFromMatrixPosition( node.children[0].matrixWorld );
-                    var line_geometry = new THREE.CylinderGeometry( this.boneSize*.5, this.boneSize*.5, 1, 16 );
-                    var line_mesh = new THREE.Mesh( line_geometry, this.line_material ); 
+                    var line_geometry, line_mesh;
+                    if(node.name == 'Head')
+                    {
+                        line_geometry = new THREE.SphereGeometry(1.0,32,32);
+                        line_mesh = new THREE.Mesh( line_geometry, this.line_material );             
+                    }
+                    else
+                    {
+                        line_geometry = new THREE.CylinderGeometry( this.boneSize*.5, this.boneSize*.5, 1, 16 );
+                        line_mesh = new THREE.Mesh( line_geometry, this.line_material ); 
+                    }
                     this.line_geos[i] = line_mesh;
-                    scene.add(line_mesh);
+                    this.skeleton.add(line_mesh);
                 }
     	    }
     	}
     	scene.add( this.skeleton );
-
+        scene.add( this.joint );
     },
     
     updateSkeleton:function (  ) {
@@ -167,11 +179,15 @@ BVH.Reader.prototype = {
     		if ( node.name !== 'Site' ){
 	    		mtx = node.matrixWorld;
 	    		bone.position.setFromMatrixPosition( mtx );
+                this.bones[i].scale.set(this.boneSize*0.5, this.boneSize*0.5, this.boneSize*0.5);
 	    		if(node.children.length)
                 {
 	    			target = new THREE.Vector3().setFromMatrixPosition( node.children[0].matrixWorld );
                     var direction = new THREE.Vector3().subVectors( bone.position, target );
-                    this.line_geos[i].scale.set(this.boneSize*.5, direction.length(), this.boneSize*.5);
+                    if(node.name !== 'Head')
+                        this.line_geos[i].scale.set(this.boneSize*.5, direction.length(), this.boneSize*.5);
+                    else
+                        this.line_geos[i].scale.set(this.boneSize, this.boneSize*1.5, this.boneSize);
                     var mid_pos = new THREE.Vector3();
                     mid_pos.x = (bone.position.x + target.x)/2;
                     mid_pos.y = (bone.position.y + target.y)/2;
@@ -287,6 +303,7 @@ BVH.Reader.prototype = {
 				}
 				this.bones.length = 0;
 		        scene.remove( this.skeleton );
+                scene.remove( this.joint );
 		   }
 		}
     },

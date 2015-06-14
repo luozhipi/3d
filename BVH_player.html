@@ -20,11 +20,32 @@
 	<script src="js/Bvh.js"></script>
 
 	<script src='js/dat.gui.min.js'></script>
+    
+       <script type="x-shader/x-vertex" id="vertexShader">
+			varying vec3 vWorldPosition;
+			void main() {
+				vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+				vWorldPosition = worldPosition.xyz;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+			}
+		</script>
+
+		<script type="x-shader/x-fragment" id="fragmentShader">
+			uniform vec3 topColor;
+			uniform vec3 bottomColor;
+			uniform float offset;
+			uniform float exponent;
+			varying vec3 vWorldPosition;
+			void main() {
+				float h = normalize( vWorldPosition + offset ).y;
+				gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( max( h, 0.0 ), exponent ), 0.0 ) ), 1.0 );
+			}
+		</script>
 
 	<script> 
 		var vsize = { x:100, y:100, z:0 };
 		var mouse = { x:0, y:0 };
-		var lightPos, camPos;
+		var camPos;
 
 		var inRender = true, inResize = false, isNeedPause = false;
 		var FAR = 2000;
@@ -32,8 +53,8 @@
 		var ToRad = Math.PI / 180;
 		var ToDeg = 180 / Math.PI;
 
-		var camera, container, scene, renderer, composer, renderPass, delta, center, centerLight;
-		var ambient, hemiLight, pointLight, light;
+		var camera, container, scene, renderer, composer, renderPass, delta, center, fog;
+		var directionalLight, hemiLight;
 		var body, suit, bodyNeck, bodyHead, head, neck, hair, eyeR, eyeL, teethUp, teethDown, eyeTop, tongue, troat, headBase, fakeNeck, eyesTarget;
 	
 		var materials = []; 
@@ -59,7 +80,7 @@
 		};
 
 		var sky;
-		var skyCube;
+		var skyGeo;
 
 		var debug;
 
@@ -83,7 +104,6 @@
 			vsize.z = vsize.x / vsize.y;
 
 			camPos = { horizontal: 90, vertical: 80, distance: 200, automove: false };
-			lightPos = { horizontal: 135, vertical: 35, distance: 200 };
             mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true, dx:0, dy:0 };
 
             if(SeaStandard)lightPos.horizontal+=180;
@@ -116,38 +136,27 @@
 
 		function initScene3D() {
 			
-			// RENDERER
-			renderer = new THREE.WebGLRenderer({  antialias: false });
-			renderer.setSize( vsize.x, vsize.y );
-			renderer.autoClear = false;
-			//renderer.sortObjects = false;
-			renderer.gammaInput = true;
-			renderer.gammaOutput = true;
-			renderer.shadowMapEnabled = true;
-			//renderer.shadowMapCullFace = THREE.CullFaceBack;
-			renderer.shadowMapType = THREE.PCFSoftShadowMap;
-
-			container = document.getElementById("viewport");
-            container.appendChild( renderer.domElement );
-			renderer.domElement.style.top = 0 + "px";
-			renderer.domElement.style.left = 0 + "px";
-			renderer.domElement.style.position = "absolute";
-
 			// SCENE
 			scene = new THREE.Scene();
-
+            fog = new THREE.Fog( 0xffffff, 1000, 10000 );
+            scene.add(fog);
 			// CAMERA
 			camera = new THREE.PerspectiveCamera( 45, vsize.z, 1, FAR );
-			//camera.position.set( 0, 30, 100 );
 		    center = new THREE.Vector3(0,30,0);
-		    centerLight =  new THREE.Vector3(0,-45,0);
 		    moveCamera();
 
-			addBasicObject();
-
-			initLightAndSky();
-
-			//importBody();
+            // RENDERER
+			renderer = new THREE.WebGLRenderer({  antialias: true });
+			renderer.setClearColor( fog.color );
+            renderer.setPixelRatio( window.devicePixelRatio );
+        	renderer.setSize( vsize.x, vsize.y );
+			renderer.shadowMapEnabled = true;
+			renderer.shadowMapType = THREE.PCFSoftShadowMap;
+            renderer.domElement.style.position = "relative";
+			container = document.getElementById("viewport");
+            container.appendChild( renderer.domElement );    
+            renderer.gammaInput = true;
+			renderer.gammaOutput = true;
 
 			window.addEventListener( 'resize', resize, false );
 			container.addEventListener( 'mousemove', onMouseMove, false );
@@ -162,99 +171,38 @@
 		    }else if( body.attachEvent ){
 		        body.attachEvent("onmousewheel" , onMouseWheel); // ie
 		    }
-		    animate();
-
-		    initBVH();
+            initLight();
+			addSky();
+            addGround();   
+            
+ 		    initBVH();
+		    
+            animate();
 		}
-
-		//-----------------------------------------------------
-		//
-		//  RENDER LOOP
-		//
-		//-----------------------------------------------------
-
-		function animate() {
-			requestAnimationFrame( animate );
-			render();
-		}
-
-		function render() {
-			updateBVH();
-			renderer.clear();
-			renderer.render( scene, camera );
-		}
-
-		//-----------------------------------------------------
-		//  LISTENER
-		//-----------------------------------------------------
-
-		function resize( event ) {
-			vsize.x = window.innerWidth;
-			vsize.y = window.innerHeight;
-			vsize.z = vsize.x / vsize.y;
-			camera.aspect = vsize.z;
-			camera.updateProjectionMatrix();
-			renderer.setSize( vsize.x, vsize.y );
-		}
-
-		//-----------------------------------------------------
-		//  LIGHT & SKY
-		//-----------------------------------------------------
-
-		function initLightAndSky(){
-
-			ambient = new THREE.AmbientLight( 0x202020 );
-			scene.add( ambient );
-
-			hemiLight = new THREE.HemisphereLight( 0x202020, 0xffffff, 1 );
-			hemiLight.position.set( 0, 20, 0 );
-			scene.add( hemiLight );
-
-			pointLight = new THREE.PointLight( 0xFFFFFF, 1, 600 );
-			scene.add( pointLight );
-
-			light = new THREE.SpotLight( 0xFFFFFF, 1, 0, Math.PI/2, 1 );
-			light.castShadow = true;
-			light.onlyShadow = false;
-			light.shadowCameraNear = 50;
-			light.shadowCameraFar = 500;
-			//light.shadowCameraFov = 35;
-			light.shadowBias = -0.005;
-			light.shadowMapWidth = light.shadowMapHeight = 1024;
-			light.shadowDarkness = 0.35;
-
-			moveLight();
-			
-			//light.shadowCameraVisible = true; 
-
-			scene.add( light );
-		}	
-
-		function moveLight() {
-		    light.position.copy(Orbit(centerLight, lightPos.horizontal, lightPos.vertical, lightPos.distance));
-		    pointLight.position.copy(Orbit(centerLight, lightPos.horizontal+180, lightPos.vertical+180, lightPos.distance));
-		    light.lookAt(centerLight);
-		}
-		
-		function lightColors( cc ){
-			ambient.color.setHex(cc[2]);
-
-			hemiLight.color.setHex( cc[2] );
-			hemiLight.groundColor.setHex( cc[0] );
-
-			pointLight.color.setHex( cc[1] );
-
-			light.color.setHex( cc[3] );
-
-			currentColors = cc;
-		}
-
-		function addBasicObject() {
-			var skyMaterial = new THREE.MeshBasicMaterial( { color: 0xA29B9B, side: THREE.BackSide, depthWrite: false } );
-		    sky = new THREE.Mesh( new THREE.BoxGeometry( FAR, FAR, FAR ), skyMaterial );
+		function addSky() {
+            var vertexShader = document.getElementById( 'vertexShader' ).textContent;
+            var fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
+            var uniforms = {
+                topColor: 	 { type: "c", value: new THREE.Color( 0x0077ff ) },
+                bottomColor: { type: "c", value: new THREE.Color( 0xffffff ) },
+                offset:		 { type: "f", value: 10 },
+                exponent:	 { type: "f", value: 0.9 }
+            }
+            uniforms.topColor.value.copy( hemiLight.color );
+            fog.color.copy( uniforms.bottomColor.value );
+            skyGeo = new THREE.CubeGeometry(3000, 3000, 3000);;
+            var skyMat = new THREE.ShaderMaterial( {
+                uniforms: uniforms,
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                side: THREE.BackSide
+            } );
+            sky = new THREE.Mesh( skyGeo, skyMat );            
 			scene.add( sky );
-
-			var groundMaterial = new THREE.MeshBasicMaterial( { color: 0xFFFFFF, transparent: true } );
+		}
+        function addGround()
+        {
+            var groundMaterial = new THREE.MeshBasicMaterial( { color: 0xFFFFFF, transparent: true } );
 			var blendings = [ "NoBlending", "NormalBlending", "AdditiveBlending", "SubtractiveBlending", "MultiplyBlending", "AdditiveAlphaBlending" ];
 			groundMaterial.blending = THREE[ blendings[ 4 ] ];
 			ground = new THREE.Mesh(new THREE.PlaneGeometry( 10000, 10000, 40, 40 ), groundMaterial);
@@ -262,19 +210,37 @@
 			ground.rotation.x = - Math.PI / 2;
 			ground.receiveShadow = true;
 			scene.add( ground );
-
-			var helper2 = new THREE.GridHelper( 100, 50 );
+			var helper2 = new THREE.GridHelper( 100, 10 );
 			helper2.setColors( 0x00ff00, 0x888888 );
 			scene.add( helper2 );
-            var offset = new THREE.Vector3(0,0,0);
-            var origin = new THREE.Vector3(0, 0, 0);
+            var origin = new THREE.Vector3(-100, 0, -100);
             var x_arrow = new THREE.Vector3(1, 0, 0);
             var y_arrow = new THREE.Vector3(0, 1, 0);
             var z_arrow = new THREE.Vector3(0, 0, 1);
-            //scene.add( new THREE.ArrowHelper( x_arrow.add(offset), origin.add(offset), 30, 0xcc0000) );
-		    //scene.add( new THREE.ArrowHelper( y_arrow.add(offset), origin.add(offset), 30, 0x00cc00) );
-		    //scene.add( new THREE.ArrowHelper( z_arrow.add(offset), origin.add(offset), 30, 0x0000cc) );
-            
+            scene.add( new THREE.ArrowHelper( x_arrow, origin, 30, 0xcc0000) );
+		    scene.add( new THREE.ArrowHelper( y_arrow, origin, 30, 0x00cc00) );
+		    scene.add( new THREE.ArrowHelper( z_arrow, origin, 30, 0x0000cc) );      
+        }
+		//-----------------------------------------------------
+		//  LIGHT & SKY
+		//-----------------------------------------------------
+
+		function initLight(){
+
+            directionalLight = new THREE.DirectionalLight( 0x333333, 2 );
+            directionalLight.position.set( 100, 100, -100 );
+            scene.add( directionalLight );
+			directionalLight.castShadow = true;
+			directionalLight.onlyShadow = false;
+			directionalLight.shadowCameraNear = 50;
+			directionalLight.shadowCameraFar = 500;
+			directionalLight.shadowCameraFov = 35;
+			directionalLight.shadowBias = -0.005;
+			directionalLight.shadowMapWidth = directionalLight.shadowMapHeight = 1024;
+			directionalLight.shadowDarkness = 0.35;
+            hemiLight = new THREE.HemisphereLight( 0xaabbff, 0x040404, 1 );
+            hemiLight.position.y = 500;
+            scene.add( hemiLight );
 		}
 
 		//-----------------------------------------------------
@@ -293,11 +259,8 @@
 		function initBVH() {
 			bvhReader = new BVH.Reader();
 			bvhReader.speed = BVHanimConfig.speed;
-
 			loadBVH("/01/01_12.bvh");
-
 			initBVHGui();
-
 		}
 
 		function loadBVH(name) {
@@ -305,47 +268,26 @@
 		}
 
 		function initBVHGui() {
-			
-
 			var f5 = gui.addFolder('BVH Animation BETA');
 
-			BVHanimConfig.calibration = function() { loadBVH("calibration.png"); };
-            BVHanimConfig.ballet = function() { loadBVH("ballet.png"); };
-            BVHanimConfig.shoot = function() { loadBVH("shoot.png"); };
-            BVHanimConfig.sprint = function() { loadBVH("sprint.png"); };
-            BVHanimConfig.exsize = function() { loadBVH("exsize.png"); };
-            BVHanimConfig.test = function() { loadBVH("test.png"); };
-            BVHanimConfig.big = function() { loadBVH("big.png"); };
-
-            BVHanimConfig.c11A = function() { loadBVH("c11A.png"); };
-            BVHanimConfig.c11B = function() { loadBVH("c11B.png"); };
-
-            BVHanimConfig.story = function() { loadBVH("story.png"); };
-            BVHanimConfig.action = function() { loadBVH("action.png"); };
-
-            BVHanimConfig.dance = function() { loadBVH("dance.png"); };
+			BVHanimConfig.climb = function() { loadBVH("/01/01_12.bvh"); };
+            BVHanimConfig.run = function() { loadBVH("/02/02_03.bvh"); };
+            BVHanimConfig.walk = function() { loadBVH("/03/03_04.bvh"); };
+            BVHanimConfig.dance = function() { loadBVH("05/05_16.bvh"); };
+            BVHanimConfig.basketball = function() { loadBVH("06/06_13.bvh"); };
+            BVHanimConfig.brisk = function() { loadBVH("07/07_12.bvh"); };
 
             BVHanimConfig.stop = function() {  bvhReader.play = false; };
             BVHanimConfig.play = function() { bvhReader.oldFrame = bvhReader.frame; bvhReader.startTime = Date.now(); bvhReader.play = true; };
             BVHanimConfig.next = function() { bvhReader.next(); };
             BVHanimConfig.prev = function() { bvhReader.prev(); };
 
-
-            f5.add( BVHanimConfig, 'calibration' );
-            f5.add( BVHanimConfig, 'ballet' );
-            f5.add( BVHanimConfig, 'shoot' );
-            f5.add( BVHanimConfig, 'sprint' );
-            f5.add( BVHanimConfig, 'exsize' );
-            f5.add( BVHanimConfig, 'test' );
-            f5.add( BVHanimConfig, 'big' );
-
-            f5.add( BVHanimConfig, 'c11A' );
-            f5.add( BVHanimConfig, 'c11B' );
-
-            f5.add( BVHanimConfig, 'story' );
-            f5.add( BVHanimConfig, 'action' );
-
-             f5.add( BVHanimConfig, 'dance' );
+            f5.add( BVHanimConfig, 'climb' );
+            f5.add( BVHanimConfig, 'run' );
+            f5.add( BVHanimConfig, 'walk' );
+            f5.add( BVHanimConfig, 'dance' );
+            f5.add( BVHanimConfig, 'basketball' );
+            f5.add( BVHanimConfig, 'brisk' );
 
             f5.add( BVHanimConfig, 'speed', 0.1, 1 ).onChange( function() { bvhReader.speed = BVHanimConfig.speed; });;
 
@@ -447,6 +389,15 @@
 		    p.y = (distance * Math.cos(phi)) + origine.y;
 		    return p;
 		}
+    
+        function resize( event ) {
+			vsize.x = window.innerWidth;
+			vsize.y = window.innerHeight;
+			vsize.z = vsize.x / vsize.y;
+			camera.aspect = vsize.z;
+			camera.updateProjectionMatrix();
+			renderer.setSize( vsize.x, vsize.y );
+		}
 
 		//-----------------------------------
 		// MOUSE & NAVIGATION 
@@ -496,15 +447,26 @@
 		    if(e.wheelDelta){delta=e.wheelDelta*-1;}
 		    else if(e.detail){delta=e.detail*20;}
 		    camPos.distance+=(delta/10);
-
 		    moveCamera();   
 		    e.preventDefault();
 		}
-
-		
-
 		window.onload = init;
+		//-----------------------------------------------------
+		//
+		//  RENDER LOOP
+		//
+		//-----------------------------------------------------
 
+		function animate() {
+			requestAnimationFrame( animate );
+			render();
+		}
+
+		function render() {
+			updateBVH();
+			renderer.clear();
+			renderer.render( scene, camera );
+		}
 	</script>
 
 	<body>
@@ -516,14 +478,8 @@
             </div>
 			<input type="file" id="files" />
 		</div>
-		<div id="BVHhubs">
-
-		</div>
 		
 		<div id="output1"></div>
 		<div id="output2"></div>
-
-		
-
 	</body>
 </html>
