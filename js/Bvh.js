@@ -296,6 +296,7 @@ BVH.Reader.prototype = {
 		}
     },
     animate:function(){
+        
     	debugTell( "frame:"+this.frame + "  frames:"+this.numFrames);
     	var ch;
 		var n =  this.frame % this.numFrames * this.channels.length;
