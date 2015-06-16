@@ -55,34 +55,16 @@
 
 		var camera, container, scene, renderer, composer, renderPass, delta, center, fog;
 		var directionalLight, hemiLight;
-		var body, suit, bodyNeck, bodyHead, head, neck, hair, eyeR, eyeL, teethUp, teethDown, eyeTop, tongue, troat, headBase, fakeNeck, eyesTarget;
+		var body;
 	
 		var materials = []; 
 		var clock = new THREE.Clock();
 		var ground;
 
 		var gui;
-		var animConfig = {
-			current:"none",
-			//neckmove:false, 
-			idle:false,
-			walk:true,
-			salut:false,
-			speed:0.8
-		}
-
-		var viewConfig = {
-			squeleton:false,
-			antialias:false,
-			withEffect:false,
-			withNormal:false,
-			withBump:true
-		};
-
+        var debug;
 		var sky;
 		var skyGeo;
-
-		var debug;
 
 		var bvhReader = null;
 
@@ -96,9 +78,6 @@
 
 		function init() {
 
-			out1 = document.getElementById("output1");
-			out2 = document.getElementById("output2");
-
 			vsize.x = window.innerWidth;
 			vsize.y = window.innerHeight;
 			vsize.z = vsize.x / vsize.y;
@@ -108,14 +87,15 @@
 
             if(SeaStandard)lightPos.horizontal+=180;
 
-			debug = document.getElementById("debug");
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/gh-pages
 			document.getElementById('files').addEventListener('change', handleFileSelect, false);
-
+            debug = document.getElementById("debug");
 			addGUI();
 
 			initScene3D();
-
 			
 		}
 
@@ -128,10 +108,6 @@
 		 		};
 		 	})(f);
 		 	reader.readAsText(f);
-		}
-
-		function debugTell(s) {
-			debug.innerHTML = s;
 		}
 
 		function initScene3D() {
@@ -249,7 +225,6 @@
 
 		var BVHset = {ax:"x", ay:"y", az:"z", dx:1, dy:1, dz:1, rx:0, ry:0, rz:0, order:"XYZ"};
 		var BVHanimConfig = {
-			debug:true,
 			speed:0.25,
 			size:1,
 			px:0, py:0, pz:0,
@@ -268,7 +243,7 @@
 		}
 
 		function initBVHGui() {
-			var f5 = gui.addFolder('BVH Animation BETA');
+			var f5 = gui.addFolder('BVH Viewer BETA');
 
 			BVHanimConfig.climb = function() { loadBVH("/01/01_12.bvh"); };
             BVHanimConfig.run = function() { loadBVH("/02/02_03.bvh"); };
@@ -310,6 +285,9 @@
 			bvhReader.rePosition(new THREE.Vector3( BVHanimConfig.px || 0, BVHanimConfig.py|| 0, BVHanimConfig.pz|| 0 ))
 		}
 
+        function debugTell(s) {
+			debug.innerHTML = s;
+		}    
 		function updateBVH() {
 			if(bvhReader !== null && bvhReader.play){
 
@@ -337,30 +315,11 @@
 			}
 		}
 
-		function traceMatrix(o, n) {
-				var e = o.matrix.elements
-				var s = o.name+"<br>";
-				var q = o.quaternion.clone();
-				//s+=( q.x ).toFixed(2)+ "_"+ ( q.y ).toFixed(2) +  "_"+ (q.z).toFixed(2)+ "_"+  (q.w).toFixed(2);
-				//s+=( b.rot.x * ToDeg ).toFixed(2)+ "_"+ ( b.rot.y * ToDeg ).toFixed(2) +  "_"+ ( b.rot.z * ToDeg ).toFixed(2);
-
-				//s+= "<br>"
-
-				s+=( o.rotation.x * ToDeg ).toFixed(2)+ "_"+ ( o.rotation.y * ToDeg ).toFixed(2) +  "_"+ ( o.rotation.z * ToDeg ).toFixed(2)+ "_"+ o.rotation.order;
-
-				s+= "<br>"
-
-				s += "_"+ e[0].toFixed(2) + "_" + e[1].toFixed(2) + "_"+ e[2].toFixed(2) + "_" + e[3] + "<br>";
-				s += "_"+ e[4].toFixed(2) + "_" + e[5].toFixed(2) + "_"+ e[6].toFixed(2) + "_" + e[7] + "<br>";
-				s += "_"+ e[8].toFixed(2) + "_" + e[9].toFixed(2) + "_"+ e[10].toFixed(2) + "_" + e[11] + "<br>";
-				s += "_"+ e[12] + "_" + e[13] + "_"+ e[14] + "_" + e[15] + "<br>";
-				
-				if(n===1) out1.innerHTML = s;
-				else out2.innerHTML = s;
-			}
+<<<<<<< HEAD
 
 
-
+=======
+>>>>>>> origin/gh-pages
 		//-----------------------------------------------------
 		//  GUI
 		//-----------------------------------------------------
@@ -369,12 +328,11 @@
 			gui = new dat.GUI({autoPlace:false, width:204});
 			document.getElementById('gui').appendChild(gui.domElement);
 		}
-		
-		function tell(s){
-			document.getElementById("debug").innerHTML = s;
-		}
+<<<<<<< HEAD
+=======
 
 		
+>>>>>>> origin/gh-pages
 
 		//-----------------------------------
 		// MATH
@@ -389,7 +347,6 @@
 		    p.y = (distance * Math.cos(phi)) + origine.y;
 		    return p;
 		}
-    
         function resize( event ) {
 			vsize.x = window.innerWidth;
 			vsize.y = window.innerHeight;
@@ -471,15 +428,13 @@
 
 	<body>
 		<div id="viewport"></div>
-		<div id="hubs">
-			<div id="debug"></div>
-			<div id="guiContener">
+<<<<<<< HEAD
+        <div id="debug"></div>
+        <div id="gui"></div>
+        <input type="file" id="files" />
+=======
                 <div id="gui"></div>
-            </div>
-			<input type="file" id="files" />
-		</div>
-		
-		<div id="output1"></div>
-		<div id="output2"></div>
+		<input type="file" id="files" />
+>>>>>>> origin/gh-pages
 	</body>
 </html>

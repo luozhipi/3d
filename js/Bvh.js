@@ -103,9 +103,6 @@ BVH.Reader.prototype = {
 				done = true;
 			}
 		}
-
-		debugTell("BVH frame:"+this.numFrames+" s/f:"+this.secsPerFrame + " channels:"+this.channels.length + " node:"+ this.nodes.length);
-		this.getNodeList();
 		this.startTime = Date.now();
 		this.play = true;
     },
@@ -117,15 +114,6 @@ BVH.Reader.prototype = {
     	this.position = v;
     	this.root.position.copy(this.position);
     },
-    getNodeList:function () {
-    	var n = this.nodes.length, node, s = "";
-    	for(var i=0; i<n; i++){
-    		node = this.nodes[i];
-    		s += node.name + " _ "+ i +"<br>"//+" _ "+node.parent.name +" _ "+node.children[0].name+"<br>";
-    	}
-    	if(out2)out2.innerHTML = s;
-    },
-
 
     addSkeleton:function ( n ) {
     	this.skeleton = new THREE.Object3D();
@@ -308,7 +296,7 @@ BVH.Reader.prototype = {
 		}
     },
     animate:function(){
-    	//debugTell("frame" +  this.frame);
+    	debugTell( "frame:"+this.frame + "  frames:"+this.numFrames);
     	var ch;
 		var n =  this.frame % this.numFrames * this.channels.length;
 		var ref = this.channels;
