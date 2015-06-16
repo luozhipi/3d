@@ -445,3 +445,4 @@ BVH.DistanceTest = function( p1, p2 ){
     if(d<=0)d=0.1;
     return d;
 }
+
