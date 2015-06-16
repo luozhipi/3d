@@ -274,7 +274,6 @@ BVH.Reader.prototype = {
     },
     clearNode:function(){
     	var i;
-    	if(out2)out2.innerHTML = "";
 
     	if(this.nodes){
 
