@@ -86,11 +86,6 @@
             mouse = { ox:0, oy:0, h:0, v:0, mx:0, my:0, down:false, over:false, moving:true, dx:0, dy:0 };
 
             if(SeaStandard)lightPos.horizontal+=180;
-
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/gh-pages
 			document.getElementById('files').addEventListener('change', handleFileSelect, false);
             debug = document.getElementById("debug");
 			addGUI();
@@ -314,12 +309,6 @@
 				z : Math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)) * 1
 			}
 		}
-
-<<<<<<< HEAD
-
-
-=======
->>>>>>> origin/gh-pages
 		//-----------------------------------------------------
 		//  GUI
 		//-----------------------------------------------------
@@ -328,11 +317,6 @@
 			gui = new dat.GUI({autoPlace:false, width:204});
 			document.getElementById('gui').appendChild(gui.domElement);
 		}
-<<<<<<< HEAD
-=======
-
-		
->>>>>>> origin/gh-pages
 
 		//-----------------------------------
 		// MATH
@@ -428,13 +412,8 @@
 
 	<body>
 		<div id="viewport"></div>
-<<<<<<< HEAD
         <div id="debug"></div>
         <div id="gui"></div>
-        <input type="file" id="files" />
-=======
-                <div id="gui"></div>
 		<input type="file" id="files" />
->>>>>>> origin/gh-pages
 	</body>
 </html>
