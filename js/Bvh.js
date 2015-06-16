@@ -50,30 +50,7 @@ BVH.Reader.prototype = {
 
 		if(this.type === 'bvh'){ // direct from file
 			xhr.onreadystatechange = function(){ if ( this.readyState == 4 ){ _this.parseData(this.responseText.split(/\s+/g));}};			
-	    } else if(this.type === 'png'){ // from png compress
-	    	xhr.responseType = 'blob';
-	    	xhr.onload = function(e) {
-	    		if (this.readyState == 4 ) {//if (this.status == 200) {
-		    		var blob = this.response;
-		    		var img = document.createElement('img');
-		    		img.onload = function(e) {
-		    			var c=document.createElement("canvas"), r='', pix, i, string = "";
-		    			c.width = this.width;
-		    			c.height = this.height;
-		    			c.getContext('2d').drawImage(this, 0, 0);
-		    			var d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-		    			for ( i = 0, l=d.length; i<l; i+=4){
-							pix = d[i];
-							if( pix<96 ) string += String.fromCharCode(pix+32);
-						}
-						var array = string.split(",");
-						_this.parseData(array);
-		    		    window.URL.revokeObjectURL(img.src); // Clean up after yourself.
-		    		}
-		    		img.src = window.URL.createObjectURL(blob);
-		    	}
-	    	}
-	    }
+	    } 
 	    xhr.send( null );
     },
     parseData:function(data){
