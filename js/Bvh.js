@@ -389,7 +389,7 @@ BVH.Reader.prototype = {
 		if(this.bones.length > 0) 
         {
             this.updateSkeleton();
-            if(this.frame % (20*Math.ceil(this.numFrames/1000)) ==0 && this.frame !==0)
+            if(this.frame % (20*Math.ceil(this.numFrames/1000)) ==0 && this.frame !==0 && this.ghost == true)
             {
                 this.createGhost();
             }
