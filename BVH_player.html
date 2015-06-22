@@ -230,7 +230,7 @@
 		function initBVH() {
 			bvhReader = new BVH.Reader();
 			bvhReader.speed = BVHanimConfig.speed;
-			loadBVH("/01/01_12.bvh");
+			loadBVH("07/07_12.bvh");
 			initBVHGui();
 		}
 
@@ -252,6 +252,8 @@
             BVHanimConfig.play = function() { bvhReader.oldFrame = bvhReader.frame; bvhReader.startTime = Date.now(); bvhReader.play = true; };
             BVHanimConfig.next = function() { bvhReader.next(); };
             BVHanimConfig.prev = function() { bvhReader.prev(); };
+            
+            BVHanimConfig.ghost = function() {bvhReader.ghost = !bvhReader.ghost};
 
             f5.add( BVHanimConfig, 'climb' );
             f5.add( BVHanimConfig, 'run' );
@@ -273,6 +275,8 @@
             f5.add( BVHanimConfig, 'pz', -100, 100 ).onChange( function() { positionBVH() });;
 
             f5.add( BVHanimConfig, 'boneSize', 0.5, 5 ).onChange( function() { bvhReader.boneSize = BVHanimConfig.boneSize; });
+            
+            f5.add(BVHanimConfig, 'ghost');
 
 			f5.open();
 

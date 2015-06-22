@@ -11,6 +11,7 @@ BVH.Reader = function(){
 	this.numFrames = 0;
 	this.secsPerFrame = 0;
 	this.play = false;
+    this.ghost = true;
 	this.channels = null;
 	this.lines = "";
 	
@@ -36,6 +37,13 @@ BVH.Reader = function(){
 
 	this.material = new THREE.MeshBasicMaterial({ color: 0x0000cc });
     this.line_material = new THREE.MeshNormalMaterial({ shading: THREE.SmoothShading });
+    this.ghostMaterial = new THREE.MeshBasicMaterial({color: 0x0000cc, opacity:0.3, transparent:true});
+    this.ghostaLineMaterial = new THREE.MeshNormalMaterial({ shading: THREE.SmoothShading, opacity:0.4, transparent:true})
+    
+    this.ghostArray = [];
+    this.ghostLineArray = [];
+    this.ghost_count = 0;
+
 },
 
 BVH.Reader.prototype = {
@@ -132,6 +140,7 @@ BVH.Reader.prototype = {
     	}
     	scene.add( this.skeleton );
         scene.add( this.joint );
+        if(this.ghost == true) this.ghost_count = 0;
     },
     
     updateSkeleton:function (  ) {
@@ -172,6 +181,68 @@ BVH.Reader.prototype = {
 	    	}
     	}
     },
+    
+    createGhost:function()
+    {
+        var mtx, node;
+    	var n = this.nodes.length;
+    	var target;
+        var ghost_joint = new THREE.Object3D();
+        var ghost_skeleton = new THREE.Object3D();
+     	for(var i=0; i<n; i++){
+    		node = this.nodes[i];
+    		if ( node.name !== 'Site' ){
+	    		mtx = node.matrixWorld;
+                var geo = new THREE.SphereGeometry(1.0,32,32);
+                var ghost_bone = new THREE.Mesh(geo, this.ghostMaterial);
+                ghost_bone.position.setFromMatrixPosition( mtx );
+                ghost_bone.scale.set(this.boneSize*0.5, this.boneSize*0.5, this.boneSize*0.5);
+                ghost_joint.add(ghost_bone);
+	    		if(node.children.length)
+                {
+	    			target = new THREE.Vector3().setFromMatrixPosition( node.children[0].matrixWorld );
+                    var line_geometry, line_mesh;
+                    if(node.name == 'Head')
+                    {
+                        line_geometry = new THREE.SphereGeometry(1.0,32,32);
+                        line_mesh = new THREE.Mesh( line_geometry, this.ghostaLineMaterial );             
+                    }
+                    else
+                    {
+                        line_geometry = new THREE.CylinderGeometry( this.boneSize*.5, this.boneSize*.5, 1, 16 );
+                        line_mesh = new THREE.Mesh( line_geometry, this.ghostaLineMaterial ); 
+                    }    
+                    var direction = new THREE.Vector3().subVectors( ghost_bone.position, target );
+                    if(node.name !== 'Head')
+                        line_mesh.scale.set(this.boneSize*.5, direction.length(), this.boneSize*.5);
+                    else
+                        line_mesh.scale.set(this.boneSize, this.boneSize*1.5, this.boneSize);
+                    var mid_pos = new THREE.Vector3();
+                    mid_pos.x = (ghost_bone.position.x + target.x)/2;
+                    mid_pos.y = (ghost_bone.position.y + target.y)/2;
+                    mid_pos.z = (ghost_bone.position.z + target.z)/2;
+                    line_mesh.position.set(mid_pos.x, mid_pos.y, mid_pos.z);
+                    var up = new THREE.Vector3(0, 1, 0);
+                    var crossVecs = new THREE.Vector3();
+                    crossVecs.crossVectors(up,direction);
+                    crossVecs.normalize();
+                    var dotVecs = Math.acos(direction.dot(up)/(direction.length()*up.length()));
+                    var q = new THREE.Quaternion();
+                    q.setFromAxisAngle(crossVecs, dotVecs);
+                    q.normalize();                    
+                    line_mesh.useQuaternion = true;
+                    line_mesh.quaternion.set(q.x, q.y, q.z, q.w);
+                    ghost_skeleton.add(line_mesh);   
+	    		}
+	    	}
+    	}
+        this.ghostArray[this.ghost_count] = ghost_joint;
+        this.ghostLineArray[this.ghost_count] = ghost_skeleton;
+        scene.add(this.ghostArray[this.ghost_count]);
+        scene.add(this.ghostLineArray[this.ghost_count]);
+        this.ghost_count++;
+    },
+    
 	transposeName:function(name){
 		if(name==="hip") name = "Hips";
 		if(name==="abdomen") name = "Spine1";
@@ -268,6 +339,7 @@ BVH.Reader.prototype = {
 				this.bones.length = 0;
 		        scene.remove( this.skeleton );
                 scene.remove( this.joint );
+                this.clearGhostArray();    
 		   }
 		}
     },
@@ -314,9 +386,29 @@ BVH.Reader.prototype = {
 
 			n++;
 		}
-
-		if(this.bones.length > 0) this.updateSkeleton();
-		
+		if(this.bones.length > 0) 
+        {
+            this.updateSkeleton();
+            if(this.frame % (20*Math.ceil(this.numFrames/1000)) ==0 && this.frame !==0)
+            {
+                this.createGhost();
+            }
+        }
+		if(this.ghost == false)
+        {
+            this.clearGhostArray();           
+        }
+    },
+    clearGhostArray:function()
+    {
+        for(var i=0;i<this.ghost_count;i++)
+        {
+            scene.remove(this.ghostArray[i]);
+            scene.remove(this.ghostLineArray[i]);
+        }
+        this.ghost_count = 0;
+        this.ghostArray = [];
+        this.ghostLineArray = [];
     },
     autoDetectRotation:function(Obj, Axe, Angle){
 
@@ -338,62 +430,11 @@ BVH.Reader.prototype = {
     	}
 
     },
-    matrixRotation:function(Obj, Axe, Angle){
-
-    	//this.tmpAngle.push(Angle * BVH.TO_RAD);
-
-
-    	//Obj.rotation[Axe] =  Angle * BVH.TO_RAD;
-    	//Obj.rotationAutoUpdate = false;
-    	//Obj.matrix.matrixAutoUpdate = false;
-
-    	
-    	/*var axis = new THREE.Vector3( 0, 0, 0 );
-    	if(Axe === "x") axis.x = 1;
-    	else if (Axe === "y") axis.y = 1;
-    	else axis.z = 1;
-
-    	axis.normalize();
-    	*/
-
-
-    	/*var quat = new THREE.Quaternion();
-    	quat.setFromAxisAngle(axis,angle);
-    	var vector = axis.clone();//new THREE.Vector3( 1, 0, 0 );
-        vector.applyQuaternion( quat )
-
-    	//Obj.rotateOnAxis(axe.normalize(), angle);
-
-    	// world axes
-    	//Obj.quaternion.multiplyQuaternions(quat,Obj.quaternion);
-
-    	Obj.lookAt(vector);*/
-        // body axes
-        //Obj.quaternion.multiply(quat);
-
-        //Obj.quaternion = quat;
-
-    	/*var mtx = Obj.matrix.clone();
-
-    	Obj.applyMatrix()
-    	//mtx.extractRotation()
-    	var mtx2 = Obj.matrix.clone();
-    	mtx.matrixAutoUpdate = false;
-    	mtx2.matrixAutoUpdate = false;
-    	mtx.makeRotationAxis(axe.normalize(), angle);
-    	Obj.matrixAutoUpdate = false;
-
-    	Obj.matrix.multiplyMatrices(mtx, mtx2); 
-    		Obj.matrixAutoUpdate = true;*/
-
-    	//Obj.rotation.setFromRotationMatrix( mtx );
-
-    },
     update:function(){
     	if ( this.play ) { 
 			this.frame = ((((Date.now() - this.startTime) / this.secsPerFrame / 1000) )*this.speed)| 0;
 			if(this.oldFrame!==0)this.frame += this.oldFrame;
-			if(this.frame > this.numFrames ){this.frame = 0;this.oldFrame=0; this.startTime =Date.now() }
+			if(this.frame > this.numFrames ){this.frame = 0;this.oldFrame=0; this.startTime =Date.now(); this.clearGhostArray(); }
 
 			this.animate();
 		}
